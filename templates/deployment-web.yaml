@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.image.web.repository }}:{{ .Values.image.web.tag }}"
+          imagePullPolicy: {{ .Values.image.web.pullPolicy }}
+          env:
+            - name: ALLOWED_HOSTS
+              value: {{ .Values.settings.allowedHost }}
+            - name: SECRET_KEY
+              value: {{ .Values.settings.secretKey }}
+            {{- if .Values.settings.apiAccess }}
+            - name: API_ACCESS
+              value: "True"
+            {{- end }}
+            - name: BASE_URL
+              value: {{ .Values.settings.baseUrl }}
+            - name: DATABASE_URL
+              {{- if .Values.postgresql.credentials.externalSecret.enabled }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.credentials.externalSecret.secretName }}
+                  key: {{ .Values.postgresql.credentials.externalSecret.secretUriKey }}
+              {{- else }}
+              value: postgres://{{ .Values.postgresql.credentials.postgresUser }}:{{ .Values.postgresql.credentials.postgresPassword }}@db:5432/{{ .Values.postgresql.postgresDatabase }}
+              {{- end }}
+            {{- if .Values.settings.email.enabled }}
+            - name: EMAIL_HOST
+              value: {{ .Values.settings.email.emailHost }}
+            - name: EMAIL_PORT
+              value: "{{ .Values.settings.email.emailPort }}"
+            - name: EMAIL_USE_TLS
+              value: "True"
+            - name: EMAIL_USE_SSL
+              value: "False"
+            {{- end }}
+            {{- if .Values.settings.email.externalSecret.enabled }}
+            - name: EMAIL_HOST_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.settings.email.externalSecret.emailSecretName }}
+                  key: {{ .Values.settings.email.externalSecret.emailSecretUserKey }}
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.settings.email.externalSecret.emailSecretName }}
+                  key: {{ .Values.settings.email.externalSecret.emailSecretPasswordKey }}
+            {{- else }}
+            - name: EMAIL_HOST_USER
+              value: {{ .Values.settings.email.emailUser }}
+            - name: EMAIL_HOST_PASSWORD
+              value: {{ .Values.settings.email.emailPassword }}
+            {{- end }}
+          ports:
+            - containerPort: 8000
+

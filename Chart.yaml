@@ -1,0 +1,5 @@
+apiVersion: v2
+name: chiefonboarding
+description: A Helm chart for ChiefOnboarding application
+version: 0.1.0
+appVersion: "latest"

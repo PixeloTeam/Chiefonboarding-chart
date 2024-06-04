@@ -1,0 +1,55 @@
+replicaCount: 2
+
+image:
+  web:
+    repository: chiefonboarding/chiefonboarding
+    tag: latest
+    pullPolicy: IfNotPresent
+  db:
+    repository: postgres
+    tag: latest
+    pullPolicy: IfNotPresent
+
+service:
+  web:
+    type: NodePort
+    port: 8000
+  db:
+    type: ClusterIP
+    port: 5432
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: chiefonboarding.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: chiefonboarding-tls
+      hosts:
+        - chiefonboarding.local
+
+postgresql:
+  internal:
+    enabled: true
+    postgresDatabase: chiefonboarding
+    postgresUser: postgres
+    postgresPassword: securepassword123
+  external:
+    enabled: false
+    host: ""
+    port: 5432
+    secretName: external-postgres-secret
+    secretUserKey: postgres-username
+    secretPasswordKey: postgres-password
+
+secretKey: somethingsupersecret
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 10Gi

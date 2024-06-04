@@ -1,0 +1,37 @@
+name: Test Push
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  Read_HelmCharts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - id: read_projects
+        run: |
+          echo "helm_charts=$(find . -type f -name "Chart.yaml" | xargs dirname | jq --compact-output --raw-input --slurp 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+    outputs:
+      helm_charts: ${{ steps.read_projects.outputs.helm_charts }}
+
+  Helm_lint:
+    needs: Read_HelmCharts
+    strategy:
+      matrix:
+        projects: ${{fromJson(needs.Read_HelmCharts.outputs.helm_charts)}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.9.0
+
+      - name: "Helm Lint ${{ matrix.projects }}"
+        run: |
+          helm lint ${{ matrix.projects }}
+        shell: bash

@@ -1,0 +1,102 @@
+replicaCount: 1
+
+image:
+  web:
+    repository: chiefonboarding/chiefonboarding
+    tag: latest
+    pullPolicy: IfNotPresent
+  db:
+    repository: postgres
+    tag: latest
+    pullPolicy: IfNotPresent
+
+service:
+  web:
+    type: ClusterIP
+    port: 8000
+  db:
+    type: ClusterIP
+    port: 5432
+
+ingress:
+  enabled: false
+  className: internal
+  annotations: []
+  hosts:
+    - host: chiefonboarding.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - chiefonboarding.local
+      secretName: mysupersecret
+
+postgresql:
+  postgresDatabase: chiefonboarding
+  internal:
+    enabled: true
+    persistence:
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 10Gi
+  external:
+    enabled: false
+    host: "remote.db.uri"
+    port: 5432
+  credentials:
+    externalSecret:
+      enabled: false
+      secretName: external-postgres-secret
+      secretUserKey: postgres-username
+      secretPasswordKey: postgres-password
+    # Don't use clear text credentials in production !!!
+    postgresUser: ""
+    postgresPassword: ""
+
+settings:
+  secretKey: mysupesecretkey
+  apiAccess: true
+  baseUrl: http://localhost
+  allowedHost: "'*'"
+  objectStorage:
+    enabled: false
+    awsS3EndpointUrl: ""
+    awsStorageBucketName: ""
+    awsDefaultRegion: ""
+    awsCredentialsSecret: ""
+  email:
+    enabled: true
+    emailHost: smtp.chiefonboarding.com
+    emailPort: 587
+    emailUser: "my-super-secret"
+    emailPassword: "password"
+    emailUseTls: "False"
+    emailUseSsl: "True"
+    externalSecret:
+      enabled: false
+      emailSecretName: external-postgres-secret
+      emailSecretUserKey: email_user_key
+      emailSecretPasswordKey: email_password_key
+    # Don't use clear text credentials in production !!!
+    emailUser: ""
+    emailPassword: ""
+  twilio:
+    enabled: false
+    twilioFromNumber: XXXXXXXXX
+    externalSecret:
+      enabled: false
+      twilioSecretName: ""
+      twilioSecretAccountSid: ""
+      twilioSecretAccountToken: ""
+    # Don't use clear text credentials in production !!!
+    twilioAccountSid: ""
+    twilioAccountToken: ""
+
+labels:
+  application: chiefonboarding
+
+
+
+
+

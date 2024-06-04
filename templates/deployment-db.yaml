@@ -1,0 +1,60 @@
+{{- if .Values.postgresql.internal.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      initContainers:
+        - name: init-pgdata
+          image: busybox
+          command: ["sh", "-c", "rm -rf /var/lib/postgresql/data/lost+found"]
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+      containers:
+        - name: db
+          image: "{{ .Values.image.db.repository }}:{{ .Values.image.db.tag }}"
+          imagePullPolicy: {{ .Values.image.db.pullPolicy }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.postgresDatabase }}
+          {{- if .Values.postgresql.credentials.externalSecret.enabled }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.credentials.externalSecret.secretName }}
+                  key: {{ .Values.postgresql.credentials.externalSecret.secretUserKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.credentials.externalSecret.secretName }}
+                  key: {{ .Values.postgresql.credentials.externalSecret.secretPasswordKey }}
+          {{- else }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.credentials.postgresUser }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.credentials.postgresPassword }}
+          {{- end }}
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/usr/lib/postgresql/16/bin/pg_ctl", "stop", "-D", "/var/lib/postgresql/data", "-w", "-t", "60", "-m", "fast"]
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: pgdata-pvc
+{{- end }}

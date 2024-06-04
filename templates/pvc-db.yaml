@@ -1,0 +1,12 @@
+{{- if .Values.postgresql.internal.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgdata-pvc
+spec:
+  accessModes:
+    - {{ .Values.postgresql.internal.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.internal.persistence.size }}
+{{- end }}
