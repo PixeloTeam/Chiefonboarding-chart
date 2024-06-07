@@ -13,10 +13,10 @@ image:
 service:
   web:
     type: ClusterIP
-    port: 8000
+    port: "8000"
   db:
     type: ClusterIP
-    port: 5432
+    port: "5432"
 
 ingress:
   enabled: false
